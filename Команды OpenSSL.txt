@@ -1,0 +1,6 @@
+1. openssl genrsa -des3 -out server.key.secure 2048
+2. openssl rsa -in server.key.secure -out server.key
+3. openssl req -new -key server.key -out server.csr
+4. openssl x509 -req -days 9365 -in server.csr -signkey server.key -out server.crt
+
+# Браузер будет выдавать предупреждение безопасности, так как автор сертификата ему не известен. Необходимо внести сертификат в список надежных
