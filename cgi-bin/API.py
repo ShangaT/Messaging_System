@@ -47,7 +47,7 @@ def Send():
     login_recipient = html.escape(form.getfirst("login_recipient"))
     secret = html.escape(form.getfirst("secret"))
 
-    salt = Check_db('salt', 'users', 'login', login_sender)
+    salt = Check_db('salt', 'users', 'login', login_sender).encode('utf-8')
     hash_password_sender = hashlib.sha256(password_sender + salt).hexdigest()
 
     if Check_db('password', 'users', 'login', login_sender) == hash_password_sender:
@@ -75,7 +75,7 @@ def Open():
     password = form.getfirst("password").encode('utf-8')
     key = form.getfirst("key")
 
-    salt = Check_db('salt', 'users', 'login', login)
+    salt = Check_db('salt', 'users', 'login', login).encode('utf-8')
     hash_password = hashlib.sha256(password + salt).hexdigest()
 
     if Check_db('password', 'users', 'login', login) == hash_password:
