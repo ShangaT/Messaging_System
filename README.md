@@ -9,7 +9,7 @@
    * браузер и платформа;
    * Метод HTTP и путь запроса ... например, "GET / HTTP / 1.1" (transfer.pw, 
    * данные о местоположении...
- - расположение сервера за пределами РФ
+ - расположение сервера за пределами РФ (Password.link) ???
    
 // из политик конфиденциальности Password.link, Yopass, Password Pusher, Smart-Secret, 1ty.me, onetimesecret.com, transfer.pw
 
