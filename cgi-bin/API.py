@@ -5,11 +5,9 @@ import html, hashlib
 import datetime, time
 
 form = cgi.FieldStorage() #получаем данные из форм
-
 send = form.getfirst("send") #кнопки
 open = form.getfirst("open")
 registration = form.getfirst("registration")
-
 db = sqlite3.connect("Users.db") #подключаемся к базе данных
 
 def Show_in_browser(text):
@@ -34,13 +32,13 @@ def Check_db(select, fromm, where, value):
     db_value = db.cursor().execute(db_req).fetchone() #записываем в переменную
     return db_value
 
-def Delete_db(value):
+def Delete_db(fromm, where, value):
     db = sqlite3.connect("Users.db")
     db.row_factory = lambda cursor, row: row[0]
-    db_req = f"DELETE FROM secrets WHERE key == '{value}';"
+    #db_req = f"DELETE FROM secrets WHERE key == '{value}';"
+    db_req = f"DELETE FROM {fromm} WHERE {where} == '{value}';"
     db_value = db.cursor().execute(db_req)
     db.commit()
-
 
 def Send():
     login_sender = html.escape(form.getfirst("login_sender")) # html.escape - экранируем от XXS-атак через форму ввода
@@ -48,31 +46,41 @@ def Send():
     login_recipient = html.escape(form.getfirst("login_recipient"))
     secret = html.escape(form.getfirst("secret"))
 
-    salt = Check_db('salt', 'users', 'login', login_sender).encode('utf-8')
-    hash_password_sender = hashlib.sha256(password_sender + salt).hexdigest()
-
-    time_rec = datetime.datetime.now() #расчитали время сейчас
-    time_del = time_rec+datetime.timedelta(minutes = 1) #расчитываем время удаления сообщения
-
-    if Check_db('password', 'users', 'login', login_sender) == hash_password_sender:
-        if Check_db('login', 'users', 'login', login_recipient) == login_recipient:
-            k = ''.join([random.choice(string.ascii_letters + string.digits) for i in range(16)])
-
-            if Check_db('key', 'secrets', 'key', k) != None: # на случай, если сгенерированный ключ уже есть в базе
-                while Check_db('key', 'secrets', 'key', k) != None:
-                    k = ''.join([random.choice(string.ascii_letters + string.digits) for i in range(16)])
-                    Check_db('key', 'secrets', 'key', k)
-            if Check_db('key', 'secrets', 'key', k) == None:
-                Add_Message(k, login_recipient, login_sender, secret, time_del)
-
-            Show_in_browser(f"Для пользователя {login_recipient} сформерован идентификатор: {k}\n")
-            print(''' <html lang = "ru"> <body> <br>
-                Отправьте ключ получателю секретного сообщения.<br>
-                Чтобы получить доступ к секретному сообщению, получателю необходимо ввести этот ключ в соответсвующее поле.
-                </body>
-            </html>''')
-        else: Show_in_browser(f'Пользователь {login_recipient} не зарегистрирован')
-    else: Show_in_browser('Неправельный логин или пароль, возможно, Вы не зарегистрированы')
+    if Check_db('login', 'users', 'login', login_sender) != None:  #Проверям есть ли отправитель в базе
+        time_del_login_s_str = Check_db('time', 'users', 'login', login_sender) #получаем время хранения учкетной записи
+        time_del_login_s = datetime.datetime.strptime(time_del_login_s_str, '%Y-%m-%d %H:%M:%S.%f')
+        if datetime.datetime.now() < time_del_login_s: #не истекло ли время действия учетной записи отправителя
+            salt = Check_db('salt', 'users', 'login', login_sender)
+            hash_password_sender = hashlib.sha256(password_sender + salt).hexdigest()
+            if Check_db('password', 'users', 'login', login_sender) == hash_password_sender: #сравниваем логин и пароль
+                if Check_db('login', 'users', 'login', login_recipient) == login_recipient: #есть ли получатель в базе
+                    time_del_login_r_str = Check_db('time', 'users', 'login', login_recipient)
+                    time_del_login_r = datetime.datetime.strptime(time_del_login_r_str, '%Y-%m-%d %H:%M:%S.%f')
+                    if datetime.datetime.now() < time_del_login_r: #не истекло ли время действия учетной записи получателя
+                        time_rec = datetime.datetime.now() #расчитали время сейчас
+                        time_del = time_rec+datetime.timedelta(minutes = 5) #расчитываем время удаления сообщения
+                        k = ''.join([random.choice(string.ascii_letters + string.digits) for i in range(16)]) #идентификатор
+                        if Check_db('key', 'secrets', 'key', k) != None: # на случай, если сгенерированный ключ уже есть в базе
+                            while Check_db('key', 'secrets', 'key', k) != None:
+                                k = ''.join([random.choice(string.ascii_letters + string.digits) for i in range(16)])
+                                Check_db('key', 'secrets', 'key', k)
+                        if Check_db('key', 'secrets', 'key', k) == None:
+                            Add_Message(k, login_recipient, login_sender, secret, time_del)
+                            Show_in_browser(f"Для пользователя {login_recipient} сформерован идентификатор: {k}\n")
+                            print(''' <html lang = "ru"> <body> <br>
+                                Отправьте ключ получателю секретного сообщения.<br>
+                                Чтобы получить доступ к секретному сообщению, получателю необходимо ввести этот ключ в соответсвующее поле.
+                                </body>
+                            </html>''')
+                    else:
+                        Show_in_browser("Истек срок дейсствия учетной записи получателя")
+                        Delete_db('users', 'login', login_recipient)
+                else: Show_in_browser("Получатель с таким логином не зарегистрирован или время действия его учетной записи истекло")
+            else: Show_in_browser("Неверный пароль")
+        else:
+            Show_in_browser("Время действия вашей учетной записи истекло")
+            Delete_db('users', 'login', login_sender)
+    else: Show_in_browser("Вы не зарегистрированы в системе или время действия вашей учетной записи истеко")
 
 
 def Open():
@@ -80,25 +88,31 @@ def Open():
     password = form.getfirst("password").encode('utf-8')
     key = form.getfirst("key")
 
-    salt = Check_db('salt', 'users', 'login', login).encode('utf-8')
-    hash_password = hashlib.sha256(password + salt).hexdigest()
-
-    if Check_db('password', 'users', 'login', login) == hash_password:
-        if Check_db('recipient', 'secrets', 'key', key) == login:
-
-            time_del_str = Check_db('time', 'secrets', 'recipient', login)
-            time_del = datetime.datetime.strptime(time_del_str, '%Y-%m-%d %H:%M:%S.%f') #преобразуем строку в формат даты и времени
-
-            if datetime.datetime.now() < time_del: #проверям не истекло ли время хранения сообщения
-                sender = Check_db('sender', 'secrets', 'key', key)
-                message = Check_db('message', 'secrets', 'key', key)
-                Show_in_browser(f"Пользователь {sender} отправил Вам сообщение: {message}")
-                Delete_db(key)
-            else:
-                Show_in_browser("Истек срок хранения сообщения")
-                Delete_db(key)
-        else: Show_in_browser("Ключ недействителен или сообщение предназначено другому пользователю")
-    else: Show_in_browser("Неправильный логин или пароль")
+    if Check_db('login', 'users', 'login', login) != None: #есть ли получатель в базе
+        time_del_login_str = Check_db('time', 'users', 'login', login) #получаем время хранения учетной записи
+        time_del_login = datetime.datetime.strptime(time_del_login_str, '%Y-%m-%d %H:%M:%S.%f') #преобразуем строку в формат даты и времени
+        if datetime.datetime.now() < time_del_login: #проверям время действия учетной записи
+            salt = Check_db('salt', 'users', 'login', login)
+            hash_password = hashlib.sha256(password + salt).hexdigest()
+            if Check_db('password', 'users', 'login', login) == hash_password: #проверям пароль
+                if Check_db('recipient', 'secrets', 'key', key) == login: #ищем соответсвие логина и идентификатора сообщения
+                    time_del_message_str = Check_db('time', 'secrets', 'key', key)
+                    time_del_message = datetime.datetime.strptime(time_del_message_str, '%Y-%m-%d %H:%M:%S.%f')
+                    if datetime.datetime.now() < time_del_message: #проверям не истекло ли время хранения сообщения
+                        sender = Check_db('sender', 'secrets', 'key', key)
+                        message = Check_db('message', 'secrets', 'key', key)
+                        Show_in_browser(f"Пользователь {sender} отправил Вам сообщение: {message}")
+                        #Delete_db('secrets', 'key', key)
+                    else:
+                        Show_in_browser("Истек срок хранения сообщения")
+                        Delete_db('secrets', 'key', key)
+                else: Show_in_browser("Ключ недействителен или сообщение предназначено другому пользователю")
+            else: Show_in_browser("Непрвильный пароль")
+        else:
+            Show_in_browser("Время действия вашей учетной записи истекло")
+            Delete_db('users', 'login', login)
+            Delete_db('secrets', 'recipient', login)
+    else: Show_in_browser("Вы не зарегистрированы в системе или время действия вашей учетной записи истеко")
 
 
 def Registration():
@@ -111,7 +125,7 @@ def Registration():
     hash_password2 = hashlib.sha256(password2 + salt).hexdigest()
 
     time_rec = datetime.datetime.now() #расчитали время сейчас
-    time_del = time_rec+datetime.timedelta(minutes = 1) #расчитываем время удаления пользователя
+    time_del = time_rec+datetime.timedelta(minutes = 10) #расчитываем время удаления пользователя
 
     if Check_db('login', 'users', 'login', login_new) == None:
         if hash_password1 == hash_password2:
