@@ -58,7 +58,7 @@ def Send():
                     time_del_login_r = datetime.datetime.strptime(time_del_login_r_str, '%Y-%m-%d %H:%M:%S.%f')
                     if datetime.datetime.now() < time_del_login_r: #не истекло ли время действия учетной записи получателя
                         time_rec = datetime.datetime.now() #расчитали время сейчас
-                        time_del = time_rec+datetime.timedelta(minutes = 5) #расчитываем время удаления сообщения
+                        time_del = time_rec+datetime.timedelta(days = 7) #расчитываем время удаления сообщения
                         k = ''.join([random.choice(string.ascii_letters + string.digits) for i in range(16)]) #идентификатор
                         if Check_db('key', 'secrets', 'key', k) != None: # на случай, если сгенерированный ключ уже есть в базе
                             while Check_db('key', 'secrets', 'key', k) != None:
@@ -125,7 +125,7 @@ def Registration():
     hash_password2 = hashlib.sha256(password2 + salt).hexdigest()
 
     time_rec = datetime.datetime.now() #расчитали время сейчас
-    time_del = time_rec+datetime.timedelta(minutes = 10) #расчитываем время удаления пользователя
+    time_del = time_rec+datetime.timedelta(days = 365) #расчитываем время удаления пользователя
 
     if Check_db('login', 'users', 'login', login_new) == None:
         if hash_password1 == hash_password2:
