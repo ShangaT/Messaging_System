@@ -3,12 +3,14 @@ import sqlite3
 import random, string
 import html, hashlib
 import datetime, time
+import rsa, gostcrypto
 
 form = cgi.FieldStorage() #получаем данные из форм
 send = form.getfirst("send") #кнопки
 open = form.getfirst("open")
 registration = form.getfirst("registration")
 db = sqlite3.connect("Users.db") #подключаемся к базе данных
+
 
 def Show_in_browser(text):
     print ("Content-type:text/html")
@@ -20,9 +22,9 @@ def Add_Message (key, recipient, sender, message, time):
     db.cursor().execute("INSERT INTO secrets (key, recipient, sender, message, time) VALUES (?, ?, ?, ?, ?)", (value))
     db.commit()
 
-def Add_User(login, password, salt, time):
-    value = login, password, salt, time
-    db.cursor().execute("INSERT INTO users (login, password, salt, time) VALUES (?, ?, ?, ?)", (value)) #кортеж от SQL-инъекций
+def Add_User(login, password, salt, time, public_key, private_key):
+    value = login, password, salt, time, str(public_key), str(private_key)
+    db.cursor().execute("INSERT INTO users (login, password, salt, time, public, private) VALUES (?, ?, ?, ?, ?, ?)", (value)) #кортеж от SQL-инъекций
     db.commit() #сохраняем базу
 
 def Check_db(select, fromm, where, value):
@@ -39,6 +41,13 @@ def Delete_db(fromm, where, value):
     db_req = f"DELETE FROM {fromm} WHERE {where} == '{value}';"
     db_value = db.cursor().execute(db_req)
     db.commit()
+
+# def RSA_encryption(string):
+#     (publicKey, privateKey) = rsa.newkeys(2048) #ключи
+#     crypto = rsa.encrypt(string, publicKey)
+
+
+
 
 def Send():
     login_sender = html.escape(form.getfirst("login_sender")) # html.escape - экранируем от XXS-атак через форму ввода
@@ -65,6 +74,9 @@ def Send():
                                 k = ''.join([random.choice(string.ascii_letters + string.digits) for i in range(16)])
                                 Check_db('key', 'secrets', 'key', k)
                         if Check_db('key', 'secrets', 'key', k) == None:
+
+
+
                             Add_Message(k, login_recipient, login_sender, secret, time_del)
                             Show_in_browser(f"Для пользователя {login_recipient} сформерован идентификатор: {k}\n")
                             print(''' <html lang = "ru"> <body> <br>
@@ -117,7 +129,8 @@ def Open():
 
 def Registration():
     login_new = html.escape(form.getfirst("login_new"))
-    password1 = html.escape(form.getfirst("password1")).encode('utf-8')
+    password = html.escape(form.getfirst("password1"))
+    password1 = password.encode('utf-8')
     password2 = html.escape(form.getfirst("password2")).encode('utf-8')
 
     salt = ''.join([random.choice(string.ascii_lowercase + string.digits) for i in range(64)]).encode('utf-8')
@@ -127,9 +140,18 @@ def Registration():
     time_rec = datetime.datetime.now() #расчитали время сейчас
     time_del = time_rec+datetime.timedelta(days = 365) #расчитываем время удаления пользователя
 
+    key = password.rjust(32, '0').encode('utf-8') #добавляем к паролю символы до нужной длинный
+
+
     if Check_db('login', 'users', 'login', login_new) == None:
         if hash_password1 == hash_password2:
-            Add_User(login_new, hash_password1, salt, time_del)
+            (public_key, private_key) = rsa.newkeys(2048) #формирование ключей для RSA
+            text = str(private_key).encode('utf-8')
+            #pk = private_key.encode('utf-8')
+            obj = gostcrypto.gostcipher.new('kuznechik', key, gostcrypto.gostcipher.MODE_ECB, pad_mode=gostcrypto.gostcipher.PAD_MODE_1)
+            encrypted_private_key = obj.encrypt(text) #шифруем приватный ключ кузнечиком
+
+            Add_User(login_new, hash_password1, salt, time_del, public_key, encrypted_private_key)
             Show_in_browser("Вы зарегестрированы, теперь вы можете отправлять и получать секретные сообщения")
         else: Show_in_browser("Вы не прошли проверку пароля, попробуйте еще раз")
     else: Show_in_browser("Такой логин уже существует, придумайте другой")

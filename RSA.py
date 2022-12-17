@@ -1,3 +1,4 @@
+#pip install rsa
 import rsa
 
 (publicKey, privateKey) = rsa.newkeys(2048)
@@ -11,3 +12,6 @@ print(f"Зашифрованаая строка: {crypto}")
 print(f"Публичный ключ: {publicKey}")
 print(f"Приватный ключ: {privateKey}")
 print (f"{not_crypto}")
+
+key = str(privateKey).encode('utf-8')
+print (f"Кодированный ключ {key}")
