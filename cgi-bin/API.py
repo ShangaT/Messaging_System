@@ -23,7 +23,7 @@ def Add_Message (key, recipient, sender, message, time):
     db.commit()
 
 def Add_User(login, password, salt, time, public_key, private_key):
-    value = login, password, salt, time, str(public_key), str(private_key)
+    value = login, password, salt, time, public_key, private_key
     db.cursor().execute("INSERT INTO users (login, password, salt, time, public, private) VALUES (?, ?, ?, ?, ?, ?)", (value)) #кортеж от SQL-инъекций
     db.commit() #сохраняем базу
 
@@ -53,7 +53,7 @@ def Send():
     login_sender = html.escape(form.getfirst("login_sender")) # html.escape - экранируем от XXS-атак через форму ввода
     password_sender = html.escape(form.getfirst("password_sender")).encode('utf-8')
     login_recipient = html.escape(form.getfirst("login_recipient"))
-    secret = html.escape(form.getfirst("secret"))
+    secret = html.escape(form.getfirst("secret")).encode('utf-8')
 
     if Check_db('login', 'users', 'login', login_sender) != None:  #Проверям есть ли отправитель в базе
         time_del_login_s_str = Check_db('time', 'users', 'login', login_sender) #получаем время хранения учкетной записи
@@ -75,9 +75,12 @@ def Send():
                                 Check_db('key', 'secrets', 'key', k)
                         if Check_db('key', 'secrets', 'key', k) == None:
 
+                            ks = Check_db('public', 'users', 'login', login_recipient)
+                            key = rsa.PublicKey.load_pkcs1(ks)
 
+                            encrypted_secret = rsa.encrypt(secret, key) #шифруем сообщение
 
-                            Add_Message(k, login_recipient, login_sender, secret, time_del)
+                            Add_Message(k, login_recipient, login_sender, encrypted_secret, time_del)
                             Show_in_browser(f"Для пользователя {login_recipient} сформерован идентификатор: {k}\n")
                             print(''' <html lang = "ru"> <body> <br>
                                 Отправьте ключ получателю секретного сообщения.<br>
@@ -146,12 +149,14 @@ def Registration():
     if Check_db('login', 'users', 'login', login_new) == None:
         if hash_password1 == hash_password2:
             (public_key, private_key) = rsa.newkeys(2048) #формирование ключей для RSA
-            text = str(private_key).encode('utf-8')
-            #pk = private_key.encode('utf-8')
-            obj = gostcrypto.gostcipher.new('kuznechik', key, gostcrypto.gostcipher.MODE_ECB, pad_mode=gostcrypto.gostcipher.PAD_MODE_1)
-            encrypted_private_key = obj.encrypt(text) #шифруем приватный ключ кузнечиком
+            #text = str(private_key).encode('utf-8')
+            pub_k = public_key.save_pkcs1()
+            pr_k = private_key.save_pkcs1()
 
-            Add_User(login_new, hash_password1, salt, time_del, public_key, encrypted_private_key)
+            obj = gostcrypto.gostcipher.new('kuznechik', key, gostcrypto.gostcipher.MODE_ECB, pad_mode=gostcrypto.gostcipher.PAD_MODE_1)
+            encrypted_private_key = obj.encrypt(pr_k) #шифруем приватный ключ кузнечиком
+
+            Add_User(login_new, hash_password1, salt, time_del, pub_k, encrypted_private_key)
             Show_in_browser("Вы зарегестрированы, теперь вы можете отправлять и получать секретные сообщения")
         else: Show_in_browser("Вы не прошли проверку пароля, попробуйте еще раз")
     else: Show_in_browser("Такой логин уже существует, придумайте другой")
