@@ -1,3 +1,5 @@
+#pip install rsa
+#pip install gostcrypto
 import cgi
 import sqlite3
 import random, string
@@ -10,7 +12,6 @@ send = form.getfirst("send") #кнопки
 open = form.getfirst("open")
 registration = form.getfirst("registration")
 db = sqlite3.connect("Users.db") #подключаемся к базе данных
-
 
 def Show_in_browser(text):
     print ("Content-type:text/html")
@@ -42,12 +43,6 @@ def Delete_db(fromm, where, value):
     db_value = db.cursor().execute(db_req)
     db.commit()
 
-# def RSA_encryption(string):
-#     (publicKey, privateKey) = rsa.newkeys(2048) #ключи
-#     crypto = rsa.encrypt(string, publicKey)
-
-
-
 
 def Send():
     login_sender = html.escape(form.getfirst("login_sender")) # html.escape - экранируем от XXS-атак через форму ввода
@@ -73,11 +68,10 @@ def Send():
                             while Check_db('key', 'secrets', 'key', k) != None:
                                 k = ''.join([random.choice(string.ascii_letters + string.digits) for i in range(16)])
                                 Check_db('key', 'secrets', 'key', k)
-                        if Check_db('key', 'secrets', 'key', k) == None:
 
+                        if Check_db('key', 'secrets', 'key', k) == None:
                             ks = Check_db('public', 'users', 'login', login_recipient)
                             key = rsa.PublicKey.load_pkcs1(ks)
-
                             encrypted_secret = rsa.encrypt(secret, key) #шифруем сообщение
 
                             Add_Message(k, login_recipient, login_sender, encrypted_secret, time_del)
@@ -100,7 +94,8 @@ def Send():
 
 def Open():
     login = form.getfirst("login") #поля для получения
-    password = form.getfirst("password").encode('utf-8')
+    pas = form.getfirst("password")
+    password = pas.encode('utf-8')
     key = form.getfirst("key")
 
     if Check_db('login', 'users', 'login', login) != None: #есть ли получатель в базе
@@ -115,9 +110,17 @@ def Open():
                     time_del_message = datetime.datetime.strptime(time_del_message_str, '%Y-%m-%d %H:%M:%S.%f')
                     if datetime.datetime.now() < time_del_message: #проверям не истекло ли время хранения сообщения
                         sender = Check_db('sender', 'secrets', 'key', key)
-                        message = Check_db('message', 'secrets', 'key', key)
+                        message_encrypt = Check_db('message', 'secrets', 'key', key)
+
+                        key_kuznechik = pas.rjust(32, '0').encode('utf-8')
+                        key_RSA_encript = Check_db('private', 'users', 'login', login)
+                        obj = gostcrypto.gostcipher.new('kuznechik', key_kuznechik, gostcrypto.gostcipher.MODE_ECB, pad_mode=gostcrypto.gostcipher.PAD_MODE_1)
+
+                        key_RSA = obj.decrypt(key_RSA_encript).decode('utf-8')
+                        key_rsa_import = rsa.PrivateKey.load_pkcs1(key_RSA)
+                        message = rsa.decrypt(message_encrypt, key_rsa_import).decode('utf-8')
                         Show_in_browser(f"Пользователь {sender} отправил Вам сообщение: {message}")
-                        #Delete_db('secrets', 'key', key)
+                        Delete_db('secrets', 'key', key)
                     else:
                         Show_in_browser("Истек срок хранения сообщения")
                         Delete_db('secrets', 'key', key)
@@ -145,11 +148,9 @@ def Registration():
 
     key = password.rjust(32, '0').encode('utf-8') #добавляем к паролю символы до нужной длинный
 
-
     if Check_db('login', 'users', 'login', login_new) == None:
         if hash_password1 == hash_password2:
             (public_key, private_key) = rsa.newkeys(2048) #формирование ключей для RSA
-            #text = str(private_key).encode('utf-8')
             pub_k = public_key.save_pkcs1()
             pr_k = private_key.save_pkcs1()
 
