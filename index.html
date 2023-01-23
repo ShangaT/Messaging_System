@@ -32,14 +32,17 @@
   </div>
 </form> <br>
 
-<form method="post" action = "/cgi-bin/API.py">
+<form method="post" onsubmit="return Matching_Passwords()" action = "/cgi-bin/API.py" >
   <h3 class="form_title">РЕГИСТРАЦИЯ<br></h3>
 
   <div class="input_group">
     <input type="text" placeholder = "Логин" name = "login_new" minlength="5" required/> <br>
-    <button class="small_button" type="button" id="password_generation" onclick="Random_String()"> Сгенерировать пароль </button> <br>
+    <button class="generate_button" type="button" id="password_generation" onclick="Random_String()"> Сгенерировать пароль </button> <br>
     <input type="password" placeholder = "Пароль" name = "password1" minlength="12" maxlength="32" id="password1" required/> <br>
     <input type="password" placeholder = "Повторите пароль" name = "password2" minlength="12" maxlength="32" id="password2" required/> <br>
+
+    <!-- <button class="show_button" type="button" id="password_generation" onmousedown="password1.type='text';" onmouseup="password1.type='password';"> Показать/Скрыть </button> <br> -->
+    <button class="show_button" type="button" id="password_generation" onclick="Show_Password()"> Показать/Скрыть </button> <br>
     <button class="big_button" type="submit" name="registration" value="registration"> ЗАРЕГИСТРИРОВАТЬСЯ </button> <br>
     <output type="text" id="result"> </output>
   </div>
