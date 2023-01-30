@@ -1,0 +1,20 @@
+body{
+  display: flex;
+  justify-content: center;
+  align-items: start;
+  height: auto;
+  background-color: #b0b0b0;
+}
+
+h3{
+  background-color: #ffffff;
+  padding-left: 100px;
+  padding-right: 100px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+
+  border-style: solid;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px #444444;
+  font-family: sans-serif;
+}

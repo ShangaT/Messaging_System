@@ -50,3 +50,8 @@ function Show_Password()
     password2.type = "password";
   }
 }
+
+function Show_Error()
+{
+  document.getElementById("result").value = "Вы зарегестрированы";
+}
