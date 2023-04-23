@@ -7,14 +7,15 @@
     </head>
 
     <body>
-<form method="post" action = "/cgi-bin/API.py">
+<form method="post" action = "/cgi-bin/API.py" enctype="multipart/form-data">
   <h3 class="form_title">ОТПРАВИТЬ СООБЩЕНИЕ<br></h3>
 
 <div class="input_group">
   <input type="text" placeholder = "Ваш логин" name = "login_sender" minlength="5" required/> <br>
   <input type="password" placeholder = "Ваш пароль" name = "password_sender" minlength="12" maxlength="32" required/> <br>
   <input type="text" placeholder = "Логин получателя" name = "login_recipient" minlength="5" required/> <br>
-  <input type="text" placeholder = "Текст секретного сообщения" name = "secret" required/> <br>
+  <input type="text" placeholder = "Текст секретного сообщения" name = "secret"/> <br>
+  <input type="file" name = "secret_file"/> <br>  
 
   <button class="big_button" type="submit" name = "send" value="send"> ОТПРАВИТЬ </button> <br>
 </div>

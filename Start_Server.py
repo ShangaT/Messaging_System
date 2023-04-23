@@ -6,6 +6,7 @@ from threading import Thread
 
 def Server():
     httpd = HTTPServer(('localhost', 5000), CGIHTTPRequestHandler)
+    #httpd = HTTPServer(('192.168.56.1', 5000), CGIHTTPRequestHandler)
 
     ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
     ctx.load_cert_chain('ssl/server.crt', keyfile='ssl/server.key')

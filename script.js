@@ -2,7 +2,6 @@ function Random_String()
 {
   var password1 = document.getElementById("password1");
   var password2 = document.getElementById("password2");
-
   var str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.,-_!?*";
   var result = "";
   var max = str.length - 1, min = 0;
@@ -14,7 +13,6 @@ function Random_String()
 
   password1.type = "password";
   password2.type = "password";
-
   document.getElementById("password1").value = document.getElementById("password2").value = result;
   document.getElementById("result").value = "Не забудьте сохранить полученный пароль в надежном месте";
 }
@@ -23,7 +21,6 @@ function Matching_Passwords()
 {
   var password1 = document.getElementById("password1").value;
   var password2 = document.getElementById("password2").value;
-
   if (password1 != password2)
   {
     document.getElementById("result").value = "Пароли должны совпадать";
