@@ -12,7 +12,7 @@
 
 <div class="input_group">
   <input type="text" placeholder = "Ваш логин" name = "login_sender" minlength="5" required/> <br>
-  <input type="password" placeholder = "Ваш пароль" name = "password_sender" minlength="12" maxlength="32" required/> <br>
+  <input type="password" placeholder = "Ваш пароль" name = "password_sender" minlength="8" maxlength="32" required/> <br>
   <input type="text" placeholder = "Логин получателя" name = "login_recipient" minlength="5" required/> <br>
   <input type="text" placeholder = "Текст секретного сообщения" name = "secret"/> <br>
   <input type="file" name = "secret_file"/> <br>  
@@ -26,7 +26,7 @@
 
   <div class="input_group">
     <input type="text" placeholder = "Ваш логин" name = "login" minlength="5" required/> <br>
-    <input type="password" placeholder = "Ваш пароль" name = "password" minlength="12" maxlength="32" required/> <br>
+    <input type="password" placeholder = "Ваш пароль" name = "password" minlength="8" maxlength="32" required/> <br>
     <input type="text" placeholder = "Идентификатор сообщения" name = "key" required/> <br>
 
     <button class="big_button" type="submit" name="open" value="open"> ПРОЧИТАТЬ </button> <br>
@@ -39,8 +39,8 @@
   <div class="input_group">
     <input type="text" placeholder = "Логин" name = "login_new" minlength="5" required/> <br>
     <button class="generate_button" type="button" id="password_generation" onclick="Random_String()"> Сгенерировать пароль </button> <br>
-    <input type="password" placeholder = "Пароль" name = "password1" minlength="12" maxlength="32" id="password1" required/> <br>
-    <input type="password" placeholder = "Повторите пароль" name = "password2" minlength="12" maxlength="32" id="password2" required/> <br>
+    <input type="password" placeholder = "Пароль" name = "password1" minlength="8" maxlength="32" id="password1" required/> <br>
+    <input type="password" placeholder = "Повторите пароль" name = "password2" minlength="8" maxlength="32" id="password2" required/> <br>
 
     <!-- <button class="show_button" type="button" id="password_generation" onmousedown="password1.type='text';" onmouseup="password1.type='password';"> Показать/Скрыть </button> <br> -->
     <button class="show_button" type="button" id="password_generation" onclick="Show_Password()"> Показать/Скрыть </button> <br>

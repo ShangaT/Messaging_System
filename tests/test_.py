@@ -4,7 +4,7 @@ from API import registration, send_message, open_message
 
 @pytest.fixture(autouse=True)
 def clear_db():
-    db = sqlite3.connect("Users.db")
+    db = sqlite3.connect("main.db")
     db_clear_users = f"DELETE FROM users;"
     db_clear_messages = f"DELETE FROM secrets;"
     db_value_users = db.cursor().execute(db_clear_users)
@@ -18,7 +18,7 @@ def add_user():
 
 @pytest.fixture
 def add_message():
-    values = send_message('User_1', '1234567890Ab', 'User_2', 'Сообщение')
+    values = send_message('User_1', '1234567890Ab', 'User_2', 'Сообщение', 'text')
     return values['message_id']
 
 def test_registration():   
@@ -27,11 +27,11 @@ def test_registration():
     assert registration('User_1', '1234567890Ab') == 'Пользователь с таким логином уже зарегистрирвоан, придумайте другой'
 
 def test_send_messege(add_user):
-    assert send_message('User_3', '1234567890Ab', 'User_2', 'Сообщение') == 'Вы ввели несуществующий логин или время действия вашей учетной записи истекло'
-    assert send_message('User_1', '1234567890Abc', 'User_2', 'Сообщение') == 'Вы ввели неправильный пароль'
-    assert send_message('User_1', '1234567890Ab', 'User_3', 'Сообщение') == 'Вы ввели несуществующий логин получателя или время действия его учетной записи истекло'
+    assert send_message('User_3', '1234567890Ab', 'User_2', 'Сообщение', 'text') == 'Вы ввели несуществующий логин или время действия вашей учетной записи истекло'
+    assert send_message('User_1', '1234567890Abc', 'User_2', 'Сообщение' , 'text') == 'Вы ввели неправильный пароль'
+    assert send_message('User_1', '1234567890Ab', 'User_3', 'Сообщение', 'text') == 'Вы ввели несуществующий логин получателя или время действия его учетной записи истекло'
     
-    values = send_message('User_1', '1234567890Ab', 'User_2', 'Сообщение')
+    values = send_message('User_1', '1234567890Ab', 'User_2', 'Сообщение' , 'text')
     id = values['message_id']
     assert values['response'] == f"Для пользователя User_2 сформерован идентификатор: {id}"
 
@@ -45,7 +45,7 @@ def test_open_message(add_user, add_message):
     message = values['message']
     assert values['response'] == f"Пользователь User_1 отправил Вам сообщение: {message}"
 
-    #проверка на то, что сообщение было удалено после прочтения
+    #проверка на то, что запись о сообщении удалена из БД
     assert open_message('User_2', '1234567890Ab', add_message) == 'Сообщения с таким идентификатором не существует или его срок хранения истек'
 
 if __name__ == "__main__":

@@ -4,20 +4,20 @@ import time, datetime
 import sqlite3
 from threading import Thread
 
-def Server():
-    httpd = HTTPServer(('localhost', 5000), CGIHTTPRequestHandler)
+def server_https():
+    #httpd = HTTPServer(('localhost', 5000), HTTPRequestHandler)
     #httpd = HTTPServer(('192.168.56.1', 5000), CGIHTTPRequestHandler)
+    with HTTPServer(('192.168.0.102', 5000), CGIHTTPRequestHandler) as httpd:        
+        ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        ctx.load_cert_chain('ssl/server.crt', keyfile='ssl/server.key')
+        httpd.socket = ctx.wrap_socket(httpd.socket)
 
-    ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-    ctx.load_cert_chain('ssl/server.crt', keyfile='ssl/server.key')
-    httpd.socket = ctx.wrap_socket(httpd.socket)
+        httpd.serve_forever()
 
-    httpd.serve_forever()
-
-def Timer():
-    db = sqlite3.connect("Users.db")
+def timer():
+    #db = sqlite3.connect("Users.db")
     def Delete_db(fromm, value):
-        db = sqlite3.connect("Users.db")
+        db = sqlite3.connect("main.db")
         db.row_factory = lambda cursor, row: row[0]
         db_req = f"DELETE FROM {fromm} WHERE time < '{value}';"
         db_value = db.cursor().execute(db_req)
@@ -29,5 +29,5 @@ def Timer():
         Delete_db('users', time_now)
         Delete_db('secrets', time_now)
 
-Thread(target=Timer).start()
-Thread(target=Server).start()
+Thread(target=timer).start()
+Thread(target=server_https).start()
