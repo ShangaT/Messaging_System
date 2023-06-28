@@ -1,52 +1,72 @@
-import pytest, sqlite3, os, sys
+import pytest, os, sys
+import cx_Oracle
 sys.path.insert(1, os.path.join(sys.path[0], '../cgi-bin'))
-from API import registration, send_message, open_message
+from check_api import add_user, check_user, send_message, open_message
 
 @pytest.fixture(autouse=True)
 def clear_db():
-    db = sqlite3.connect("main.db")
-    db_clear_users = f"DELETE FROM users;"
-    db_clear_messages = f"DELETE FROM secrets;"
-    db_value_users = db.cursor().execute(db_clear_users)
-    db_value_messages = db.cursor().execute(db_clear_messages)
+    with open ('auth_db.txt', 'r') as db_file:
+        text = db_file.readlines()
+        login = text[0]
+        password = text[1]
+    db = cx_Oracle.connect(f'{login[:-1]}/{password}@localhost:1521/xe')        
+    db.cursor().execute("DELETE FROM secrets")
+    db.cursor().execute("DELETE FROM users")
     db.commit()
+    db.close()
 
 @pytest.fixture
-def add_user():
-    registration('User_1', '1234567890Ab')
-    registration('User_2', '1234567890Ab')
+def reg():
+    add_user('Alisa', '12345678')
+    add_user('Bob123', '12345678')
 
-@pytest.fixture
-def add_message():
-    values = send_message('User_1', '1234567890Ab', 'User_2', 'Сообщение', 'text')
-    return values['message_id']
+def test_add_user(clear_db):   
+    assert add_user('Alisa', '12345678') == True
+    assert add_user('Bob123', '12345678') == True
+    assert add_user('Alisa', '1234567890Ab') == False
+    assert add_user('User', 12345678) == True
+    assert add_user(12345678, '12345678') == True
+    assert add_user(None, '12345678') == True
+    assert add_user('User_1', None) == True
 
-def test_registration():   
-    assert registration('User_1', '1234567890Ab') == 'Вы зарегистрированы'
-    assert registration('User_2', '1234567890Ab') == 'Вы зарегистрированы'
-    assert registration('User_1', '1234567890Ab') == 'Пользователь с таким логином уже зарегистрирвоан, придумайте другой'
+def test_check_user(reg):
+    assert check_user('Alisa', '12345678') == True
+    assert check_user('Bob123', '12345678') == True
+    assert check_user('User', '12345678') == False
+    assert check_user('Alisa', '12345678Ab') == False
+    assert check_user('Bob123', '12345678Ab') == False
+    assert check_user(12345, '12345678') == False
+    assert check_user('Alisa', 12345678) == True
 
-def test_send_messege(add_user):
-    assert send_message('User_3', '1234567890Ab', 'User_2', 'Сообщение', 'text') == 'Вы ввели несуществующий логин или время действия вашей учетной записи истекло'
-    assert send_message('User_1', '1234567890Abc', 'User_2', 'Сообщение' , 'text') == 'Вы ввели неправильный пароль'
-    assert send_message('User_1', '1234567890Ab', 'User_3', 'Сообщение', 'text') == 'Вы ввели несуществующий логин получателя или время действия его учетной записи истекло'
-    
-    values = send_message('User_1', '1234567890Ab', 'User_2', 'Сообщение' , 'text')
-    id = values['message_id']
-    assert values['response'] == f"Для пользователя User_2 сформерован идентификатор: {id}"
+def test_send_messege_1(reg):        
+    assert send_message('Test text', 'text', 'Alisa', 'Bob123') != False
+    assert send_message('Test text', 'text', 'Alisa', 'User') == False
+    assert send_message('Test text', 'text', 'User', 'Alisa') == False
+    assert send_message('Test text', 'text', 'User', 'Bob123') == False
 
-def test_open_message(add_user, add_message):
-    assert open_message('User_3', '1234567890Ab', add_message) == 'Вы ввели несуществующий логин или время действия вашей учетной записи истекло'
-    assert open_message('User_2', '1234567890Abc', add_message) == 'Вы ввели неправильный пароль'
-    assert open_message('User_2', '1234567890Ab', '1234567890abcdef') == 'Сообщения с таким идентификатором не существует или его срок хранения истек'
-    assert open_message('User_1', '1234567890Ab', add_message) == 'Сообщение предназначено другому пользователю'
+def test_send_messege_2(reg):  
+    assert send_message('Test text', 'text', 'Alisa', 12345) == False
+    assert send_message('Test text', 'text', 12345, 'Bob123') == False
+    assert send_message('Test text', 12345, 'Alisa', 'Bob123') == False
+    assert send_message(12345, 'text', 'Alisa', 'Bob123') != False 
 
-    values = open_message('User_2', '1234567890Ab', add_message)
-    message = values['message']
-    assert values['response'] == f"Пользователь User_1 отправил Вам сообщение: {message}"
+def test_send_messege_2(reg):
+    assert send_message(None, 'text', 'Alisa', 'Bob123') != False
+    assert send_message('Test text', None, 'Alisa', 'Bob123') == False
+    assert send_message('Test text', 'text', None, 'Bob123') == False
+    assert send_message('Test text', 'text', 'Alisa', None) == False
 
-    #проверка на то, что запись о сообщении удалена из БД
-    assert open_message('User_2', '1234567890Ab', add_message) == 'Сообщения с таким идентификатором не существует или его срок хранения истек'
+def test_open_message(reg):
+    link = send_message('Test text', 'text', 'Alisa', 'Bob123')[27:]
+    assert open_message(link[1:], 'Bob123') == False
+    assert open_message(link[:1], 'Bob123') == False
+    assert open_message(link, 'Alisas') == False
+    assert open_message(link, None) == False
+    assert open_message(None, 'Bob123') == False
+    assert open_message(12345, 'Bob123') == False
+    assert open_message(link, 12345) == False    
+    assert open_message(link, 'Bob123') != 'Пользователь Alisa отправил вам сообщение: Test text'
+    assert open_message(link, 'Bob123') == False
 
 if __name__ == "__main__":
     pytest.main()

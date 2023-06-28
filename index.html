@@ -5,35 +5,18 @@
         <meta charset="utf-8">
         <link rel="stylesheet" href="/css/style_index.css">
     </head>
-
     <body>
-<form method="post" action = "/cgi-bin/API.py" enctype="multipart/form-data">
-  <h3 class="form_title">ОТПРАВИТЬ СООБЩЕНИЕ<br></h3>
+<form method="post" action = "/cgi-bin/form.py">
+  <h3 class="form_title">ВОЙТИ<br></h3>
 
 <div class="input_group">
-  <input type="text" placeholder = "Ваш логин" name = "login_sender" minlength="5" required/> <br>
-  <input type="password" placeholder = "Ваш пароль" name = "password_sender" minlength="8" maxlength="32" required/> <br>
-  <input type="text" placeholder = "Логин получателя" name = "login_recipient" minlength="5" required/> <br>
-  <input type="text" placeholder = "Текст секретного сообщения" name = "secret"/> <br>
-  <input type="file" name = "secret_file"/> <br>  
-
-  <button class="big_button" type="submit" name = "send" value="send"> ОТПРАВИТЬ </button> <br>
+  <input type="text" placeholder = "Ваш логин" name = "login" minlength="5" required/> <br>
+  <input type="password" placeholder = "Ваш пароль" name = "password" minlength="8" maxlength="32" required/> <br>  
+  <button class="big_button" type="submit" name = "button" value="enter"> ОТПРАВИТЬ </button> <br>
 </div>
 </form> <br>
 
-<form method="post" action = "/cgi-bin/API.py">
-  <h3 class="form_title">ПРОЧИТАТЬ СООБЩЕНИЕ<br></h3>
-
-  <div class="input_group">
-    <input type="text" placeholder = "Ваш логин" name = "login" minlength="5" required/> <br>
-    <input type="password" placeholder = "Ваш пароль" name = "password" minlength="8" maxlength="32" required/> <br>
-    <input type="text" placeholder = "Идентификатор сообщения" name = "key" required/> <br>
-
-    <button class="big_button" type="submit" name="open" value="open"> ПРОЧИТАТЬ </button> <br>
-  </div>
-</form> <br>
-
-<form method="post" onsubmit="return Matching_Passwords()" action = "/cgi-bin/API.py" name="R">
+<form method="post" onsubmit="return Matching_Passwords()" action = "/cgi-bin/form.py" name="R">
   <h3 class="form_title">РЕГИСТРАЦИЯ<br></h3>
 
   <div class="input_group">
@@ -41,16 +24,11 @@
     <button class="generate_button" type="button" id="password_generation" onclick="Random_String()"> Сгенерировать пароль </button> <br>
     <input type="password" placeholder = "Пароль" name = "password1" minlength="8" maxlength="32" id="password1" required/> <br>
     <input type="password" placeholder = "Повторите пароль" name = "password2" minlength="8" maxlength="32" id="password2" required/> <br>
-
-    <!-- <button class="show_button" type="button" id="password_generation" onmousedown="password1.type='text';" onmouseup="password1.type='password';"> Показать/Скрыть </button> <br> -->
     <button class="show_button" type="button" id="password_generation" onclick="Show_Password()"> Показать/Скрыть </button> <br>
-    <button class="big_button" type="submit" name="registration" value="registration"> ЗАРЕГИСТРИРОВАТЬСЯ </button> <br>
+    <button class="big_button" type="submit" name="button" value="registration"> ЗАРЕГИСТРИРОВАТЬСЯ </button> <br>
     <output type="text" name="registration_output" id="result"> </output>
-    <!-- <h1>{{ value }}</h1> -->
   </div>
 </form> <br>
-
 <script src="script.js"></script>
-
     </body>
 </html>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang = "ru">
+    <head>
+        <title>Открыть сообщение</title>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="/css/style_index.css">
+    </head>
+
+    <body>
+
+<form method="post" action = "/cgi-bin/form.py">
+  <h3 class="form_title">ВОЙТИ<br></h3>
+
+  <div class="input_group" >
+    <input type="text" placeholder = "Ваш логин" name = "login" minlength="5" required/> <br>
+    <input type="password" placeholder = "Ваш пароль" name = "password" minlength="8" maxlength="32" required/> <br>
+
+    <button class="big_button" type="submit" name="button" value="open"> ОТКРЫТЬ СООБЩЕНИЕ </button> <br>
+  </div>
+</form> <br>
+    </body>
+</html>
